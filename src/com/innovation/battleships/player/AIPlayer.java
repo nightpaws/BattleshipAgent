@@ -11,6 +11,7 @@ public class AIPlayer implements Player {
 
 	Random rand = new Random();
 	
+	private List<Ship> ships;
 	@Override
 	public String getName() {
 		// TODO Auto-generated method stub
@@ -87,7 +88,6 @@ public class AIPlayer implements Player {
 
 	@Override
 	public void opponentShot(Point shot) {
-		// TODO Auto-generated method stub
 		
 	}
 

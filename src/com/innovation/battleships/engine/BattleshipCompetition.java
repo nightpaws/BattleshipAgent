@@ -128,8 +128,8 @@ public class BattleshipCompetition {
 				ships[first] = generateBlankShips();
 
 				times[first].resume();
-				opponents[first].placeShips(Collections.unmodifiableList(Arrays.asList(ships[first])));
 				times[first].suspend();
+				opponents[first].placeShips(Collections.unmodifiableList(Arrays.asList(ships[first])));
 				if (times[first].getTime() > this.timePerGame) {
 					break;
 				}
