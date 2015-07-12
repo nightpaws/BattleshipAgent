@@ -1,15 +1,12 @@
 package com.innovation.battleships;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.awt.Point;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.innovation.battleships.engine.ShipOrientation;
 import com.innovation.battleships.engine.ShipShape;
 import com.innovation.battleships.engine.ShipType;
-
-import java.awt.*;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created by kierandouglas on 31/05/15.
