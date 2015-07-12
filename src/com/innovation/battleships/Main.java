@@ -15,7 +15,7 @@ public class Main {
 		RandomPlayer op1 = new RandomPlayer();
 		NotAwfulPlayer op2 = new NotAwfulPlayer();
 
-		BattleshipCompetition bc = new BattleshipCompetition(op1, op2, 100, 150, false);
+		BattleshipCompetition bc = new BattleshipCompetition(op1, op2, 100, 20, false);
 		HashMap<Player, Integer> scores = bc.runCompetition();
 
 		Iterator<Map.Entry<Player, Integer>> it = scores.entrySet().iterator();

@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 
 import com.innovation.battleships.engine.Player;
 import com.innovation.battleships.engine.Ship;
 import com.innovation.battleships.engine.ShipOrientation;
 import com.innovation.battleships.engine.ShipType;
+import com.sun.org.apache.bcel.internal.generic.BREAKPOINT;
 
 /**
  * Created by [Team Name] on [Date]
@@ -38,11 +40,9 @@ public class NotAwfulPlayer implements Player {
 	//where we have been successfully hit more than 10 time
 	private Map<Point,Integer> opponentHitShotsStats;
 	private int gameCounter;
-	private SpecialPositioning specialPositioning;
+	private PositioningType specialPositioning;
 	//keep track of how long it takes a ship to be sunk by random positioning
-	private Map<SpecialPositioning,Integer> defaultPositioningSunkStats;
-	//keep track of how long it takes a ship to be sunk by special positioning t
-	private Map<SpecialPositioning,Integer> specialPositioningSunkStats;
+	private Map<PositioningType,List<Integer>> positioningSunkStats;
 
 	/**
 	 * Constructor
@@ -86,8 +86,11 @@ public class NotAwfulPlayer implements Player {
 		this.opponentHitShots = new HashSet<Point>();
 		this.opponentHitShotsStats = new HashMap<Point,Integer>();
 		this.gameCounter=0;
-		this.defaultPositioningSunkStats= new HashMap<SpecialPositioning,Integer>();
-		this.specialPositioningSunkStats= new HashMap<SpecialPositioning,Integer>();
+		this.positioningSunkStats= new HashMap<PositioningType,List<Integer>>();
+		this.positioningSunkStats.put(PositioningType.DEFAULT, new ArrayList<Integer>());
+		this.positioningSunkStats.put(PositioningType.CORNERS, new ArrayList<Integer>());
+		this.positioningSunkStats.put(PositioningType.MIDDLE, new ArrayList<Integer>());
+		this.positioningSunkStats.put(PositioningType.TOGETHER, new ArrayList<Integer>());
 	}
 
 	@Override
@@ -107,11 +110,12 @@ public class NotAwfulPlayer implements Player {
 
 	@Override
 	public void newMatch(String opponent) {
+		
 	}
 
 	@Override
 	public void newGame(Integer timeSpan) {
-		gameCounter++;
+		
 	}
 
 	@Override
@@ -121,84 +125,161 @@ public class NotAwfulPlayer implements Player {
 		boolean onBlackPosition;
 		boolean valid;
 		boolean collides;
+		ShipOrientation[] orientations = new ShipOrientation[] {ShipOrientation.Up, ShipOrientation.Right, ShipOrientation.Down, ShipOrientation.Left};
+		
+		Map<Integer,Point> sortedOppentHitShots= new TreeMap<Integer,Point>();
+		for (Point p: opponentHitShotsStats.keySet()){
+			sortedOppentHitShots.put(opponentHitShotsStats.get(p), p);
+		}
+//		System.out.println(sortedOppentHitShots);
+		
 		for (Ship s : ships) {
 			
 			valid = false;
 			collides = true;
 			onBlackPosition = true;
 			
-			while (!valid || collides || onBlackPosition){
-				ShipOrientation[] orientations = new ShipOrientation[] {ShipOrientation.Up, ShipOrientation.Right, ShipOrientation.Down, ShipOrientation.Left};
-	
-				int randomInt = rand.nextInt(4);
-	
-				int x = rand.nextInt(12);
-				int y = rand.nextInt(12);
-	
-				while (x >= 6 && y <= 6) {
-					x = rand.nextInt(12);
-					y = rand.nextInt(12);
+			
+			if (gameCounter%10==0){
+				int specialPositioningRandom= rand.nextInt(3);
+				
+				switch (specialPositioningRandom){
+				case 0:
+					specialPositioning=PositioningType.CORNERS;
+					break;
+				case 1:
+					specialPositioning=PositioningType.MIDDLE;
+					break;
+				case 2:
+					specialPositioning=PositioningType.TOGETHER;
+					break;
 				}
 				
-				s.place(new Point(x, y), orientations[randomInt]);
-				
-				valid = s.isValid();
-				
-				//checks if placed on blackPosition
-				onBlackPosition=false;
-				for (Point p:opponentHitShots){
-					if (s.isAt(p)){
-						onBlackPosition=true;
+				switch (s.getType()){
+					case Destroyer:
+						switch (specialPositioning){
+						case CORNERS:
+							s.place(new Point(0, 0), orientations[0]);
+							break;
+						case MIDDLE:
+							s.place(new Point(2, 10), orientations[1]);
+							break;
+						case TOGETHER:
+							s.place(new Point(2, 9), orientations[1]);
+							break;
+						}
 						break;
-					}
-				}
-				System.out.println(opponentHitShots);
-//				//if not on blackPosition try again
-				if (onBlackPosition)
-					continue;
-
-				collides=false;
-				for (Ship otherS: ships){
-					if (s.getType()!=otherS.getType() && otherS.getAllLocations()!=null && s.collidesWith(otherS)){
-						collides = true;
+					case Cruiser:
+						switch (specialPositioning){
+						case CORNERS:
+							s.place(new Point(0, 3), orientations[0]);
+							break;
+						case MIDDLE:
+							s.place(new Point(7, 10), orientations[1]);
+							break;
+						case TOGETHER:
+							s.place(new Point(5, 9), orientations[1]);
+							break;
+						}
 						break;
-					}
-								
+					case Battleship:
+						switch (specialPositioning){
+						case CORNERS:
+							s.place(new Point(3, 11), orientations[1]);
+							break;
+						case MIDDLE:
+							s.place(new Point(2, 4), orientations[1]);
+							break;
+						case TOGETHER:
+							s.place(new Point(1, 5), orientations[1]);
+							break;
+						}
+						break;
+					case AircraftCarrier:
+						switch (specialPositioning){
+						case CORNERS:
+							s.place(new Point(1, 0), orientations[3]);
+							break;
+						case MIDDLE:
+							s.place(new Point(4, 7), orientations[0]);//maybe 4/5 for y
+							break;
+						case TOGETHER:
+							s.place(new Point(3, 7), orientations[0]);//maybe 4/5 for y
+							break;
+						}
+						break;
+					case Hovercraft:
+						switch (specialPositioning){
+						case CORNERS:
+							s.place(new Point(7, 8), orientations[0]);
+							break;
+						case MIDDLE:
+							s.place(new Point(4, 6), orientations[0]);//maybe 4 for y
+							break;
+						case TOGETHER:
+							s.place(new Point(3, 6), orientations[0]);//maybe 4 for y
+							break;
+						}
+						break;
 				}
+				
+				continue;
 			}
-			
-			this.ourShips.add(s);
-			
+			else{
+				specialPositioning=PositioningType.DEFAULT;
+				while (!valid || collides || onBlackPosition){
+					
+		
+					int randomInt = rand.nextInt(4);
+		
+					int x = rand.nextInt(12);
+					int y = rand.nextInt(12);
+		
+					while (x >= 6 && y <= 6) {
+						x = rand.nextInt(12);
+						y = rand.nextInt(12);
+					}
+					
+					s.place(new Point(x, y), orientations[randomInt]);
+					
+					valid = s.isValid();
+					
+					//checks if placed on blackPosition
+					onBlackPosition=false;
+	
+					int counter=0;
+					ArrayList<Integer> keys = new ArrayList<Integer>(sortedOppentHitShots.keySet()); 
+					for(int i=keys.size()-1;i>=0;i--){
+						if (counter>10)
+							break;
+						counter++;
+						if (s.isAt(sortedOppentHitShots.get(keys.get(i)))){
+							onBlackPosition=true;
+							break;
+						}
+						
+					}
+					
+					//if not on blackPosition try again
+					if (onBlackPosition)
+						continue;
+	
+					collides=false;
+					for (Ship otherS: ships){
+						if (s.getType()!=otherS.getType() && otherS.getAllLocations()!=null && s.collidesWith(otherS)){
+							collides = true;
+							break;
+						}
+									
+					}
+				}
+				
+				this.ourShips.add(s);
+			}
 		}
 
 
-//		int specialPositioningRandom;
-//		for (Ship s: ships){
-//			
-////			if (matchCounter%10==0){
-////				//special positioning:
-////				//1.Place ships in corners
-////				//2.Together
-////				//3.in middle
-////				specialPositioningRandom= rand.nextInt(3);
-////				
-////				switch (specialPositioningRandom){
-////				case 0:
-////					specialPositioning=SpecialPositioning.CORNERS;
-////					break;
-////				case 1:
-////					specialPositioning=SpecialPositioning.MIDDLE;
-////					break;
-////				case 2:
-////					specialPositioning=SpecialPositioning.TOGETHER;
-////					break;
-////				}
-////				
-////				//add logic
-////			}
-////			
-//	
-
+		System.out.println(positioningSunkStats);
 		
 	}
 
@@ -233,6 +314,23 @@ public class NotAwfulPlayer implements Player {
 
 	@Override
 	public void opponentShot(Point shot) {
+
+		switch (specialPositioning){
+		case DEFAULT:
+//			if (positioningSunkStats.get(specialPositioning).size()!=gameCounter)
+//
+//				positioningSunkStats.get(specialPositioning).add(1);
+//			else
+//				positioningSunkStats.get(specialPositioning).set(gameCounter-1,positioningSunkStats.get(specialPositioning).get(gameCounter)+1);//(gameCounter, defaultPositioningSunkStats.getOrDefault(gameCounter, 0)+1);
+			break;
+		case MIDDLE:
+			break;
+		case CORNERS:
+			break;
+		case TOGETHER:
+			break;
+		}
+		
 		for (Ship s: ourShips){
 			if (s.isAt(shot)){
 				
@@ -240,11 +338,10 @@ public class NotAwfulPlayer implements Player {
 				//add logic here
 				
 				opponentHitShotsStats.put(shot, opponentHitShotsStats.getOrDefault(shot, 0)+1);
-				// TODO: determine after how many successful hits a position becomes a black one, currently 50
-				if (opponentHitShotsStats.get(shot)>=12000)
-					opponentHitShots.add(shot);
+
 			}
 		}
+
 	}
 
 	@Override
@@ -259,12 +356,12 @@ public class NotAwfulPlayer implements Player {
 
 	@Override
 	public void gameWon() {
-
+		gameCounter++;
 	}
 
 	@Override
 	public void gameLost() {
-
+		gameCounter++;
 	}
 
 	@Override
@@ -272,7 +369,7 @@ public class NotAwfulPlayer implements Player {
 
 	}
 
-	private enum SpecialPositioning{
-		CORNERS,TOGETHER,MIDDLE
+	private enum PositioningType{
+		CORNERS,TOGETHER,MIDDLE,DEFAULT
 	}
 }
