@@ -42,8 +42,10 @@ public class NotAwfulPlayer implements Player {
 	private int gameCounter;
 	private PositioningType specialPositioning;
 	//keep track of how long it takes a ship to be sunk by random positioning
-	private Map<PositioningType,List<Integer>> positioningSunkStats;
-
+	private Map<Integer,Integer> positionSunkStatsDefault;
+	private Map<Integer,Integer> positionSunkStatsCorner;
+	private Map<Integer,Integer> positionSunkStatsTogether;
+	private Map<Integer,Integer> positionSunkStatsMiddle;
 	/**
 	 * Constructor
 	 */
@@ -86,11 +88,10 @@ public class NotAwfulPlayer implements Player {
 		this.opponentHitShots = new HashSet<Point>();
 		this.opponentHitShotsStats = new HashMap<Point,Integer>();
 		this.gameCounter=0;
-		this.positioningSunkStats= new HashMap<PositioningType,List<Integer>>();
-		this.positioningSunkStats.put(PositioningType.DEFAULT, new ArrayList<Integer>());
-		this.positioningSunkStats.put(PositioningType.CORNERS, new ArrayList<Integer>());
-		this.positioningSunkStats.put(PositioningType.MIDDLE, new ArrayList<Integer>());
-		this.positioningSunkStats.put(PositioningType.TOGETHER, new ArrayList<Integer>());
+		this.positionSunkStatsCorner = new HashMap<Integer,Integer>();
+		this.positionSunkStatsDefault = new HashMap<Integer,Integer>();
+		this.positionSunkStatsMiddle = new HashMap<Integer,Integer>();
+		this.positionSunkStatsTogether = new HashMap<Integer,Integer>();
 	}
 
 	@Override
@@ -140,146 +141,83 @@ public class NotAwfulPlayer implements Player {
 			onBlackPosition = true;
 			
 			
-			if (gameCounter%10==0){
-				int specialPositioningRandom= rand.nextInt(3);
+			if (gameCounter>=30 && gameCounter<=60){
+				int specialPositioningRandom=0;
+				if(gameCounter<40)
+					specialPositioningRandom=0;
+				else if(gameCounter<50)
+					specialPositioningRandom=1;
+				else if(gameCounter<=60)
+					specialPositioningRandom=2;
 				
-				switch (specialPositioningRandom){
-				case 0:
-					specialPositioning=PositioningType.CORNERS;
-					break;
-				case 1:
-					specialPositioning=PositioningType.MIDDLE;
-					break;
-				case 2:
-					specialPositioning=PositioningType.TOGETHER;
-					break;
-				}
-				
-				switch (s.getType()){
-					case Destroyer:
-						switch (specialPositioning){
-						case CORNERS:
-							s.place(new Point(0, 0), orientations[0]);
-							break;
-						case MIDDLE:
-							s.place(new Point(2, 10), orientations[1]);
-							break;
-						case TOGETHER:
-							s.place(new Point(2, 9), orientations[1]);
-							break;
-						}
-						break;
-					case Cruiser:
-						switch (specialPositioning){
-						case CORNERS:
-							s.place(new Point(0, 3), orientations[0]);
-							break;
-						case MIDDLE:
-							s.place(new Point(7, 10), orientations[1]);
-							break;
-						case TOGETHER:
-							s.place(new Point(5, 9), orientations[1]);
-							break;
-						}
-						break;
-					case Battleship:
-						switch (specialPositioning){
-						case CORNERS:
-							s.place(new Point(3, 11), orientations[1]);
-							break;
-						case MIDDLE:
-							s.place(new Point(2, 4), orientations[1]);
-							break;
-						case TOGETHER:
-							s.place(new Point(1, 5), orientations[1]);
-							break;
-						}
-						break;
-					case AircraftCarrier:
-						switch (specialPositioning){
-						case CORNERS:
-							s.place(new Point(1, 0), orientations[3]);
-							break;
-						case MIDDLE:
-							s.place(new Point(4, 7), orientations[0]);//maybe 4/5 for y
-							break;
-						case TOGETHER:
-							s.place(new Point(3, 7), orientations[0]);//maybe 4/5 for y
-							break;
-						}
-						break;
-					case Hovercraft:
-						switch (specialPositioning){
-						case CORNERS:
-							s.place(new Point(7, 8), orientations[0]);
-							break;
-						case MIDDLE:
-							s.place(new Point(4, 6), orientations[0]);//maybe 4 for y
-							break;
-						case TOGETHER:
-							s.place(new Point(3, 6), orientations[0]);//maybe 4 for y
-							break;
-						}
-						break;
-				}
+				specialPlace(specialPositioningRandom,orientations,s);
 				
 				continue;
 			}
 			else{
-				specialPositioning=PositioningType.DEFAULT;
-				while (!valid || collides || onBlackPosition){
-					
-		
-					int randomInt = rand.nextInt(4);
-		
-					int x = rand.nextInt(12);
-					int y = rand.nextInt(12);
-		
-					while (x >= 6 && y <= 6) {
-						x = rand.nextInt(12);
-						y = rand.nextInt(12);
-					}
-					
-					s.place(new Point(x, y), orientations[randomInt]);
-					
-					valid = s.isValid();
-					
-					//checks if placed on blackPosition
-					onBlackPosition=false;
-	
-					int counter=0;
-					ArrayList<Integer> keys = new ArrayList<Integer>(sortedOppentHitShots.keySet()); 
-					for(int i=keys.size()-1;i>=0;i--){
-						if (counter>10)
-							break;
-						counter++;
-						if (s.isAt(sortedOppentHitShots.get(keys.get(i)))){
-							onBlackPosition=true;
-							break;
+				if (gameCounter>60 && specialPositioningIsWorking()!=3){
+					System.out.println("positioning chosen"+ specialPositioningIsWorking());
+					specialPlace(specialPositioningIsWorking(),orientations,s);
+				}
+				else{
+					specialPositioning=PositioningType.DEFAULT;
+					while (!valid || collides || onBlackPosition){
+						
+			
+						int randomInt = rand.nextInt(4);
+			
+						int x = rand.nextInt(12);
+						int y = rand.nextInt(12);
+			
+						while (x >= 6 && y <= 6) {
+							x = rand.nextInt(12);
+							y = rand.nextInt(12);
 						}
 						
+						s.place(new Point(x, y), orientations[randomInt]);
+						
+						valid = s.isValid();
+						
+						//checks if placed on blackPosition
+						onBlackPosition=false;
+		
+						int counter=0;
+						ArrayList<Integer> keys = new ArrayList<Integer>(sortedOppentHitShots.keySet()); 
+						for(int i=keys.size()-1;i>=0;i--){
+							if (counter>10)
+								break;
+							counter++;
+							if (s.isAt(sortedOppentHitShots.get(keys.get(i)))){
+								onBlackPosition=true;
+								break;
+							}
+							
+						}
+						
+						//if not on blackPosition try again
+						if (onBlackPosition)
+							continue;
+		
+						collides=false;
+						for (Ship otherS: ships){
+							if (s.getType()!=otherS.getType() && otherS.getAllLocations()!=null && s.collidesWith(otherS)){
+								collides = true;
+								break;
+							}
+										
+						}
 					}
 					
-					//if not on blackPosition try again
-					if (onBlackPosition)
-						continue;
-	
-					collides=false;
-					for (Ship otherS: ships){
-						if (s.getType()!=otherS.getType() && otherS.getAllLocations()!=null && s.collidesWith(otherS)){
-							collides = true;
-							break;
-						}
-									
-					}
+					this.ourShips.add(s);
 				}
-				
-				this.ourShips.add(s);
 			}
 		}
 
 
-		System.out.println(positioningSunkStats);
+		System.out.println("Default:" +positionSunkStatsDefault);
+		System.out.println("Corner:" +positionSunkStatsCorner);
+		System.out.println("Middle:"+positionSunkStatsMiddle);
+		System.out.println("Together: " + positionSunkStatsTogether);
 		
 	}
 
@@ -314,29 +252,24 @@ public class NotAwfulPlayer implements Player {
 
 	@Override
 	public void opponentShot(Point shot) {
-
+		
 		switch (specialPositioning){
 		case DEFAULT:
-//			if (positioningSunkStats.get(specialPositioning).size()!=gameCounter)
-//
-//				positioningSunkStats.get(specialPositioning).add(1);
-//			else
-//				positioningSunkStats.get(specialPositioning).set(gameCounter-1,positioningSunkStats.get(specialPositioning).get(gameCounter)+1);//(gameCounter, defaultPositioningSunkStats.getOrDefault(gameCounter, 0)+1);
+				positionSunkStatsDefault.put(gameCounter, positionSunkStatsDefault.getOrDefault(gameCounter, 0)+1);
 			break;
 		case MIDDLE:
+			positionSunkStatsMiddle.put(gameCounter, positionSunkStatsMiddle.getOrDefault(gameCounter, 0)+1);
 			break;
 		case CORNERS:
+			positionSunkStatsCorner.put(gameCounter, positionSunkStatsCorner.getOrDefault(gameCounter, 0)+1);
 			break;
 		case TOGETHER:
+			positionSunkStatsTogether.put(gameCounter, positionSunkStatsTogether.getOrDefault(gameCounter, 0)+1);
 			break;
 		}
 		
 		for (Ship s: ourShips){
 			if (s.isAt(shot)){
-				
-				//check if special positioning
-				//add logic here
-				
 				opponentHitShotsStats.put(shot, opponentHitShotsStats.getOrDefault(shot, 0)+1);
 
 			}
@@ -371,5 +304,129 @@ public class NotAwfulPlayer implements Player {
 
 	private enum PositioningType{
 		CORNERS,TOGETHER,MIDDLE,DEFAULT
+	}
+	
+	private void specialPlace(int specialPositioningRandom,ShipOrientation[] orientations, Ship s){
+		switch (specialPositioningRandom){
+		case 0:
+			specialPositioning=PositioningType.CORNERS;
+			break;
+		case 1:
+			specialPositioning=PositioningType.MIDDLE;
+			break;
+		case 2:
+			specialPositioning=PositioningType.TOGETHER;
+			break;
+		}
+		
+		switch (s.getType()){
+			case Destroyer:
+				switch (specialPositioning){
+				case CORNERS:
+					s.place(new Point(0, 0), orientations[0]);
+					break;
+				case MIDDLE:
+					s.place(new Point(2, 10), orientations[1]);
+					break;
+				case TOGETHER:
+					s.place(new Point(2, 9), orientations[1]);
+					break;
+				}
+				break;
+			case Cruiser:
+				switch (specialPositioning){
+				case CORNERS:
+					s.place(new Point(0, 3), orientations[0]);
+					break;
+				case MIDDLE:
+					s.place(new Point(7, 10), orientations[1]);
+					break;
+				case TOGETHER:
+					s.place(new Point(5, 9), orientations[1]);
+					break;
+				}
+				break;
+			case Battleship:
+				switch (specialPositioning){
+				case CORNERS:
+					s.place(new Point(3, 11), orientations[1]);
+					break;
+				case MIDDLE:
+					s.place(new Point(2, 4), orientations[1]);
+					break;
+				case TOGETHER:
+					s.place(new Point(1, 5), orientations[1]);
+					break;
+				}
+				break;
+			case AircraftCarrier:
+				switch (specialPositioning){
+				case CORNERS:
+					s.place(new Point(1, 0), orientations[3]);
+					break;
+				case MIDDLE:
+					s.place(new Point(4, 7), orientations[0]);//maybe 4/5 for y
+					break;
+				case TOGETHER:
+					s.place(new Point(3, 7), orientations[0]);//maybe 4/5 for y
+					break;
+				}
+				break;
+			case Hovercraft:
+				switch (specialPositioning){
+				case CORNERS:
+					s.place(new Point(7, 8), orientations[0]);
+					break;
+				case MIDDLE:
+					s.place(new Point(4, 6), orientations[0]);//maybe 4 for y
+					break;
+				case TOGETHER:
+					s.place(new Point(3, 6), orientations[0]);//maybe 4 for y
+					break;
+				}
+				break;
+		}
+	}
+	
+	private int specialPositioningIsWorking(){
+		int defaultPositioningAverageSunkTime=getAverage(positionSunkStatsDefault);
+		int cornerPositioningAverageSunkTime=getAverage(positionSunkStatsCorner);
+		int middlePositioningAverageSunkTime=getAverage(positionSunkStatsMiddle);
+		int togetherPositioningAverageSunkTime=getAverage(positionSunkStatsTogether);
+		int positioning;
+		int positioningValue;
+		
+		if (cornerPositioningAverageSunkTime<middlePositioningAverageSunkTime && cornerPositioningAverageSunkTime<togetherPositioningAverageSunkTime){
+			positioning=0;
+			positioningValue=cornerPositioningAverageSunkTime;
+		}
+		else if (middlePositioningAverageSunkTime<cornerPositioningAverageSunkTime && middlePositioningAverageSunkTime<togetherPositioningAverageSunkTime){
+			positioning=1;
+			positioningValue=middlePositioningAverageSunkTime;
+		}
+		else{
+			positioning=2;
+			positioningValue=cornerPositioningAverageSunkTime;
+		}
+		
+		//TODO: fix checks when to use which strategy
+		System.out.println(defaultPositioningAverageSunkTime);
+		System.out.println(middlePositioningAverageSunkTime);
+		System.out.println(cornerPositioningAverageSunkTime);
+		System.out.println(togetherPositioningAverageSunkTime);
+		if (defaultPositioningAverageSunkTime>positioningValue)
+			return positioning;
+		else
+			return 3;
+	}
+	
+	private int getAverage(Map<Integer,Integer> data){
+		int total=0;
+		int counter=0;
+		for (int game: data.values()){
+			total+=game;
+			counter+=1;
+		}
+		return total/counter;
 	}
 }
