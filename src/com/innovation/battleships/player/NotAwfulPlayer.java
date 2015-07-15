@@ -128,11 +128,11 @@ public class NotAwfulPlayer implements Player {
 		boolean collides;
 		ShipOrientation[] orientations = new ShipOrientation[] {ShipOrientation.Up, ShipOrientation.Right, ShipOrientation.Down, ShipOrientation.Left};
 		
-		Map<Integer,Point> sortedOppentHitShots= new TreeMap<Integer,Point>();
+		Map<Integer,Point> sortedOpponentHitShots= new TreeMap<Integer,Point>();
+		
 		for (Point p: opponentHitShotsStats.keySet()){
-			sortedOppentHitShots.put(opponentHitShotsStats.get(p), p);
+			sortedOpponentHitShots.put(opponentHitShotsStats.get(p), p);
 		}
-//		System.out.println(sortedOppentHitShots);
 		
 		for (Ship s : ships) {
 			
@@ -141,23 +141,32 @@ public class NotAwfulPlayer implements Player {
 			onBlackPosition = true;
 			
 			
-			if (gameCounter>=30 && gameCounter<=60){
+//			if (gameCounter>=30 && gameCounter<=60){
+			if (gameCounter>=3 && gameCounter<=12){
 				int specialPositioningRandom=0;
-				if(gameCounter<40)
+//				if(gameCounter<40)
+				if(gameCounter<6)
 					specialPositioningRandom=0;
-				else if(gameCounter<50)
+//				else if(gameCounter<50)
+				else if(gameCounter<9)
 					specialPositioningRandom=1;
-				else if(gameCounter<=60)
+//				else if(gameCounter<=60)
+				else if(gameCounter<=12)
 					specialPositioningRandom=2;
 				
 				specialPlace(specialPositioningRandom,orientations,s);
 				
-				continue;
+				this.ourShips.add(s);
 			}
 			else{
-				if (gameCounter>60 && specialPositioningIsWorking()!=3){
-					System.out.println("positioning chosen"+ specialPositioningIsWorking());
-					specialPlace(specialPositioningIsWorking(),orientations,s);
+//				if (gameCounter>60 && specialPositioningIsWorking()!=3){
+				int positioninChosen=0;
+				//division by zero in getAverage function fix
+				if (gameCounter>12)
+					positioninChosen=specialPositioningIsWorking();
+				
+				if (gameCounter>12 && positioninChosen!=3){
+					specialPlace(positioninChosen,orientations,s);
 				}
 				else{
 					specialPositioning=PositioningType.DEFAULT;
@@ -182,12 +191,12 @@ public class NotAwfulPlayer implements Player {
 						onBlackPosition=false;
 		
 						int counter=0;
-						ArrayList<Integer> keys = new ArrayList<Integer>(sortedOppentHitShots.keySet()); 
+						ArrayList<Integer> keys = new ArrayList<Integer>(sortedOpponentHitShots.keySet()); 
 						for(int i=keys.size()-1;i>=0;i--){
 							if (counter>10)
 								break;
 							counter++;
-							if (s.isAt(sortedOppentHitShots.get(keys.get(i)))){
+							if (s.isAt(sortedOpponentHitShots.get(keys.get(i)))){
 								onBlackPosition=true;
 								break;
 							}
@@ -267,6 +276,11 @@ public class NotAwfulPlayer implements Player {
 			positionSunkStatsTogether.put(gameCounter, positionSunkStatsTogether.getOrDefault(gameCounter, 0)+1);
 			break;
 		}
+		System.out.println("Positioning:"+specialPositioning);
+		System.out.println("Default:" +positionSunkStatsDefault);
+		System.out.println("Corner:" +positionSunkStatsCorner);
+		System.out.println("Middle:"+positionSunkStatsMiddle);
+		System.out.println("Together: " + positionSunkStatsTogether);
 		
 		for (Ship s: ourShips){
 			if (s.isAt(shot)){
@@ -279,12 +293,10 @@ public class NotAwfulPlayer implements Player {
 
 	@Override
 	public void shotHit(Point shot, boolean sunk) {
-
 	}
 
 	@Override
 	public void shotMiss(Point shot) {
-
 	}
 
 	@Override
@@ -389,6 +401,10 @@ public class NotAwfulPlayer implements Player {
 	}
 	
 	private int specialPositioningIsWorking(){
+		
+		//TODO: fix selection of strategy, wrong chosen
+		//Average values calculated correctly
+		//not the correct strategy selected after this
 		int defaultPositioningAverageSunkTime=getAverage(positionSunkStatsDefault);
 		int cornerPositioningAverageSunkTime=getAverage(positionSunkStatsCorner);
 		int middlePositioningAverageSunkTime=getAverage(positionSunkStatsMiddle);
@@ -396,28 +412,25 @@ public class NotAwfulPlayer implements Player {
 		int positioning;
 		int positioningValue;
 		
-		if (cornerPositioningAverageSunkTime<middlePositioningAverageSunkTime && cornerPositioningAverageSunkTime<togetherPositioningAverageSunkTime){
-			positioning=0;
-			positioningValue=cornerPositioningAverageSunkTime;
-		}
-		else if (middlePositioningAverageSunkTime<cornerPositioningAverageSunkTime && middlePositioningAverageSunkTime<togetherPositioningAverageSunkTime){
-			positioning=1;
-			positioningValue=middlePositioningAverageSunkTime;
-		}
-		else{
-			positioning=2;
-			positioningValue=cornerPositioningAverageSunkTime;
-		}
+		System.out.println("_____	Stats Below ___________");
+		System.out.println("Default Positioining Average sunk time:"+defaultPositioningAverageSunkTime);
+		System.out.println("Middle Positioining Average sunk time:"+middlePositioningAverageSunkTime);
+		System.out.println("Corner Positioining Average sunk time:"+cornerPositioningAverageSunkTime);
+		System.out.println("Together Positioining Average sunk time:"+togetherPositioningAverageSunkTime);
 		
-		//TODO: fix checks when to use which strategy
-		System.out.println(defaultPositioningAverageSunkTime);
-		System.out.println(middlePositioningAverageSunkTime);
-		System.out.println(cornerPositioningAverageSunkTime);
-		System.out.println(togetherPositioningAverageSunkTime);
-		if (defaultPositioningAverageSunkTime>positioningValue)
-			return positioning;
+		if (cornerPositioningAverageSunkTime>=middlePositioningAverageSunkTime && cornerPositioningAverageSunkTime>=togetherPositioningAverageSunkTime
+				&& cornerPositioningAverageSunkTime>=defaultPositioningAverageSunkTime)
+			return 0;
+		else if (middlePositioningAverageSunkTime>=cornerPositioningAverageSunkTime && middlePositioningAverageSunkTime>=togetherPositioningAverageSunkTime
+				&& middlePositioningAverageSunkTime>=defaultPositioningAverageSunkTime )
+			return 1;
+		else if (togetherPositioningAverageSunkTime>=cornerPositioningAverageSunkTime && togetherPositioningAverageSunkTime>=defaultPositioningAverageSunkTime
+				&& togetherPositioningAverageSunkTime>=middlePositioningAverageSunkTime )
+			return 2;
 		else
 			return 3;
+		
+	
 	}
 	
 	private int getAverage(Map<Integer,Integer> data){
