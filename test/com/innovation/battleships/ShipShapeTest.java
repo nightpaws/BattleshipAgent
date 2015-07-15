@@ -4,6 +4,9 @@ import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import com.innovation.battleships.engine.ShipOrientation;
 import com.innovation.battleships.engine.ShipShape;
 import com.innovation.battleships.engine.ShipType;
