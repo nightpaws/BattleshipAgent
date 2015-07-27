@@ -15,10 +15,9 @@ import com.innovation.battleships.engine.Player;
 import com.innovation.battleships.engine.Ship;
 import com.innovation.battleships.engine.ShipOrientation;
 import com.innovation.battleships.engine.ShipType;
-import com.sun.org.apache.bcel.internal.generic.BREAKPOINT;
 
 /**
- * Created by [Team Name] on [Date]
+ * Created by Our Shots are Hit and Miss
  */
 public class NotAwfulPlayer implements Player {
 

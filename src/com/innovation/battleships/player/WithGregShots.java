@@ -15,9 +15,6 @@ import com.innovation.battleships.engine.Player;
 import com.innovation.battleships.engine.Ship;
 import com.innovation.battleships.engine.ShipOrientation;
 import com.innovation.battleships.engine.ShipType;
-import com.innovation.battleships.player.NotAwfulPlayer.PositioningType;
-
-
 
 public class WithGregShots implements Player {
 		private boolean largeControl;
@@ -277,6 +274,11 @@ public class WithGregShots implements Player {
 		    }else{
 		    	return smallShot();
 		    }
+		}
+
+		private Point smallShot() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 		@Override

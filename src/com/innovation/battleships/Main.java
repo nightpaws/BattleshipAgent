@@ -6,15 +6,14 @@ import java.util.Map;
 
 import com.innovation.battleships.engine.BattleshipCompetition;
 import com.innovation.battleships.engine.Player;
-import com.innovation.battleships.player.BetterPlayerCM;
-import com.innovation.battleships.player.NotAwfulPlayer;
+import com.innovation.battleships.player.FinalPlayer;
 import com.innovation.battleships.player.RandomPlayer;
 
 public class Main {
 
 	public static void main(String[] args) {
 		Player op1 = new RandomPlayer();
-		Player op2 = new BetterPlayerCM();
+		Player op2 = new FinalPlayer();
 
 		BattleshipCompetition bc = new BattleshipCompetition(op1, op2, 100, 61, false);
 		HashMap<Player, Integer> scores = bc.runCompetition();

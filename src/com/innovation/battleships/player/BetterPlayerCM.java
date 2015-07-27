@@ -15,7 +15,7 @@ import com.innovation.battleships.engine.ShipOrientation;
 import com.innovation.battleships.engine.ShipType;
 
 /**
- * Created by [Team Name] on [Date]
+ * Created by Our Shots are Hit and Miss
  */
 public class BetterPlayerCM implements Player {
 

@@ -2,6 +2,6 @@
 An Artificial Intelligence for playing a custom version of battleships in an L shaped grid.
 
 ####Authors####
-- Alex Chilikov -
+- Alex Chilikov - 2087690alexCh
 - Craig Morrison - @nightpaws
-- Greg Law - 
+- Greg Law - greglaw95
