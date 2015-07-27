@@ -3,10 +3,12 @@ package com.innovation.battleships.player;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 
 import com.innovation.battleships.engine.Player;
@@ -20,15 +22,17 @@ import com.innovation.battleships.engine.ShipType;
 public class FinalPlayer implements Player {
 
 	protected Random rand = new Random();
-	private boolean largeControl;
+	private boolean largeControl = true;
 	private List<Ship> opponentShips = new ArrayList<Ship>();
-	
-	// Store all attack moves made
-	protected boardStates[][] opponentGrid = new boardStates[11][11];
-
 
 	/*
-	 * Ship placement related
+	 * Targetting and Attack Related
+	 */
+	protected boardStates[][] opponentGrid = new boardStates[11][11];
+	protected Point lastHit;
+
+	/*
+	 * Ship Placement Related
 	 */
 
 	// our ships
@@ -301,6 +305,15 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public void shotHit(Point shot, boolean sunk) {
+		// we've hit something! Take control and give it to smallShot
+		if (!sunk) {
+			largeControl = false;
+			lastHit = shot;
+		} else {
+			// since we don't have handling yet
+			largeControl = true;
+		}
+
 	}
 
 	@Override
@@ -423,8 +436,8 @@ public class FinalPlayer implements Player {
 		int cornerPositioningAverageSunkTime = getAverage(positionSunkStatsCorner);
 		int middlePositioningAverageSunkTime = getAverage(positionSunkStatsMiddle);
 		int togetherPositioningAverageSunkTime = getAverage(positionSunkStatsTogether);
-//		int positioning;
-//		int positioningValue;
+		// int positioning;
+		// int positioningValue;
 
 		// System.out.println("_____ Stats Below ___________");
 		// System.out.println("Default Positioining Average sunk time:" +
@@ -478,10 +491,51 @@ public class FinalPlayer implements Player {
 	}
 
 	private Point smallShot() {
-		// TODO Auto-generated method stub
-		return null;
+
+		// get positions around the shot and their status
+		Map<Point, boardStates> localPos = new HashMap<Point, boardStates>();
+		localPos.put(new Point(lastHit.x - 1, lastHit.y), opponentGrid[lastHit.x - 1][lastHit.y]);
+		localPos.put(new Point(lastHit.x + 1, lastHit.y), opponentGrid[lastHit.x + 1][lastHit.y]);
+		localPos.put(new Point(lastHit.x, lastHit.y - 1), opponentGrid[lastHit.x][lastHit.y - 1]);
+		localPos.put(new Point(lastHit.x, lastHit.y + 1), opponentGrid[lastHit.x][lastHit.y + 1]);
+		localPos.put(new Point(lastHit.x - 1, lastHit.y - 1), opponentGrid[lastHit.x - 1][lastHit.y - 1]);
+		localPos.put(new Point(lastHit.x + 1, lastHit.y + 1), opponentGrid[lastHit.x + 1][lastHit.y + 1]);
+		localPos.put(new Point(lastHit.x - 1, lastHit.y + 1), opponentGrid[lastHit.x - 1][lastHit.y + 1]);
+		localPos.put(new Point(lastHit.x + 1, lastHit.y - 1), opponentGrid[lastHit.x + 1][lastHit.y - 1]);
+
+		for (int i = 0; i < localPos.size(); i++) {
+			if (!localPos.get(i).equals(boardStates.UNUSED)) {
+				localPos.remove(i);
+			}
+		}
+
+		List<Point> localPoints = new ArrayList<Point>();
+		localPoints.addAll(localPos.keySet());
+
+		for (int i = 0; i < localPoints.size(); i++) {
+			Point p = localPoints.get(i);
+			// switch () {
+			// default:
+			// break;
+			//
+			// }
+			// switch such that if the space opposite an empty one is a hit, try
+			// that one over others
+		}
+
+		return localPoints.get(rand.nextInt(localPoints.size() - 1));
+
+		// // guess randomly - just here to avoid an exception in this commit
+		// int x = rand.nextInt(12);
+		// int y = rand.nextInt(12);
+		//
+		// while (x >= 6 && y <= 6) {
+		// x = rand.nextInt(12);
+		// y = rand.nextInt(12);
+		// }
+		// return new Point(x, y);
 	}
-	
+
 	private int getSquareUse(int square) {
 		int uses = 0;
 		Point startCoOrd = squareMap.get(square);
@@ -575,11 +629,11 @@ public class FinalPlayer implements Player {
 		return ((p.x > 5) && (p.y < 6));
 	}
 
-//	private Point getNearestSquare(Point currentPoint) {
-//		int newX = currentPoint.x / 2;
-//		newX = newX * 2;
-//		int newY = currentPoint.y / 2;
-//		newY = newY * 2;
-//		return new Point(newX, newY);
-//	}
+	// private Point getNearestSquare(Point currentPoint) {
+	// int newX = currentPoint.x / 2;
+	// newX = newX * 2;
+	// int newY = currentPoint.y / 2;
+	// newY = newY * 2;
+	// return new Point(newX, newY);
+	// }
 }
