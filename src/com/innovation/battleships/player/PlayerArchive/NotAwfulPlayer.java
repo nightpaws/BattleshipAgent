@@ -408,8 +408,6 @@ public class NotAwfulPlayer implements Player {
 		int cornerPositioningAverageSunkTime=getAverage(positionSunkStatsCorner);
 		int middlePositioningAverageSunkTime=getAverage(positionSunkStatsMiddle);
 		int togetherPositioningAverageSunkTime=getAverage(positionSunkStatsTogether);
-		int positioning;
-		int positioningValue;
 		
 		System.out.println("_____	Stats Below ___________");
 		System.out.println("Default Positioining Average sunk time:"+defaultPositioningAverageSunkTime);
