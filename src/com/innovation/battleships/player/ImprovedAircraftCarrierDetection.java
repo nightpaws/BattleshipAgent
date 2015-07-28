@@ -186,7 +186,7 @@ public class ImprovedAircraftCarrierDetection implements Player {
 		hitSet.add(shot);
 		if(sunk){
 			System.out.println("Sunk");
-			List<Target> possiblySunk = new ArrayList(targetsLeft);
+			List<Target> possiblySunk = new ArrayList<Target>(targetsLeft);
 			for(Target current:targetsLeft){
 				if(shipMatches(current)){
 					possiblySunk.add(current);

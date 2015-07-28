@@ -1,4 +1,4 @@
-package com.innovation.battleships.player;
+package com.innovation.battleships.player.PlayerArchive;
 import java.awt.Point;
 import java.util.List;
 import java.util.Random;
