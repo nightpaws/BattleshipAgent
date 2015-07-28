@@ -23,7 +23,7 @@ public class FinalPlayer implements Player {
 	protected Random rand = new Random();
 	private boolean largeControl = true;
 	// Store opponents remaining ships
-	List<Target> targetsLeft = new ArrayList<Target>();
+	protected List<Target> targetsLeft = new ArrayList<Target>();
 
 	/*
 	 * Targetting and Attack Related
@@ -59,7 +59,7 @@ public class FinalPlayer implements Player {
 		CORNERS, TOGETHER, MIDDLE, DEFAULT
 	}
 
-	public enum boardStates {
+	protected enum boardStates {
 		HIT, MISS, INVALID, UNUSED
 	}
 
@@ -1076,6 +1076,127 @@ public class FinalPlayer implements Player {
 		}
 		return false;
 
+	}
+
+	/*
+	 * Inner Classes Contained Below:
+	 */
+	private class Target {
+		private ShipType type;
+		private boolean vertical;
+
+		public Target(ShipType type, boolean vertical) {
+			this.type = type;
+			this.vertical = vertical;
+		}
+
+		public ShipType getType() {
+			return type;
+		}
+
+		/*
+		 * public void setType(ShipType type) {this.type=type;}
+		 */
+
+		public boolean isVertical() {
+			return vertical;
+		}
+		/*
+		 * public void setVertical(boolean vertical) {this.vertical=vertical;}
+		 */
+	}
+
+	public class Shot {
+		private int x;
+		private int y;
+		private int possibleUsefullness;
+
+		public Shot(int x, int y) {
+			this.x = x;
+			this.y = y;
+			this.possibleUsefullness = 0;
+		}
+
+		public int getX() {
+			return x;
+		}
+
+		public int getY() {
+			return y;
+		}
+
+		public int getUsefullnness() {
+			return possibleUsefullness;
+		}
+
+		public void possibleUse() {
+			possibleUsefullness++;
+		}
+
+		public boolean isValid() {
+			return (x < 12 && x > -1 && y < 12 && y > -1 && (!(x > 5 && y < 6)));
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof Shot)) {
+				return false;
+			}
+			Shot otherShot = (Shot) o;
+			return ((this.getX() == otherShot.getX()) && (this.getY() == otherShot.getY()));
+		}
+
+		@Override
+		public int hashCode() {
+			return (x * 50) + y;
+		}
+	}
+
+	private class HitSet extends HashSet<Point> {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -1469575265874868882L;
+
+		public List<int[]> numberOfEachX() {
+			Set<Integer> possibleXs = new HashSet<Integer>();
+			for (Point current : this) {
+				possibleXs.add(current.x);
+			}
+			List<int[]> numberOfEachX = new ArrayList<int[]>();
+			for (Integer nextX : possibleXs) {
+				numberOfEachX.add(new int[] { nextX, 0 });
+			}
+			for (Point current : this) {
+				for (int[] numOfX : numberOfEachX) {
+					if (current.x == numOfX[0]) {
+						numOfX[1]++;
+						break;
+					}
+				}
+			}
+			return numberOfEachX;
+		}
+
+		public List<int[]> numberOfEachY() {
+			Set<Integer> possibleYs = new HashSet<Integer>();
+			for (Point current : this) {
+				possibleYs.add(current.y);
+			}
+			List<int[]> numberOfEachY = new ArrayList<int[]>();
+			for (Integer nextY : possibleYs) {
+				numberOfEachY.add(new int[] { nextY, 0 });
+			}
+			for (Point current : this) {
+				for (int[] numOfY : numberOfEachY) {
+					if (current.y == numOfY[0]) {
+						numOfY[1]++;
+						break;
+					}
+				}
+			}
+			return numberOfEachY;
+		}
 	}
 
 }
