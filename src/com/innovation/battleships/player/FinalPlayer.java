@@ -2,9 +2,8 @@ package com.innovation.battleships.player;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -23,24 +22,27 @@ public class FinalPlayer implements Player {
 
 	protected Random rand = new Random();
 	private boolean largeControl = true;
-	private List<Ship> opponentShips = new ArrayList<Ship>();
+	// Store opponents remaining ships
+	List<Target> targetsLeft = new ArrayList<Target>();
 
 	/*
 	 * Targetting and Attack Related
 	 */
-	protected boardStates[][] opponentGrid = new boardStates[11][11];
+	protected boardStates[][] opponentGrid = new boardStates[12][12];
 	protected Point lastHit;
 
 	/*
 	 * Ship Placement Related
 	 */
 
-	// our ships
+	// holds our ships
 	private List<Ship> ourShips;
 
 	// keep the entire statistics of where we have been hit, while one above
 	// only black positions
 	// where we have been successfully hit more than 10 time
+
+	// private Set<Point> opponentHitShots;
 	private Map<Point, Integer> opponentHitShotsStats;
 	private int gameCounter;
 	private PositioningType specialPositioning;
@@ -50,8 +52,8 @@ public class FinalPlayer implements Player {
 	private Map<Integer, Integer> positionSunkStatsCorner;
 	private Map<Integer, Integer> positionSunkStatsTogether;
 	private Map<Integer, Integer> positionSunkStatsMiddle;
-
 	private Map<Integer, Point> squareMap;
+	private HitSet hitSet;
 
 	private enum PositioningType {
 		CORNERS, TOGETHER, MIDDLE, DEFAULT
@@ -65,17 +67,6 @@ public class FinalPlayer implements Player {
 	 * Constructor
 	 */
 	public FinalPlayer() {
-
-		// Add Ships remaining to list
-		Ship ac = new Ship(ShipType.AircraftCarrier);
-		Ship bs = new Ship(ShipType.Battleship);
-		Ship cr = new Ship(ShipType.Cruiser);
-		Ship de = new Ship(ShipType.Destroyer);
-		Ship hc = new Ship(ShipType.Hovercraft);
-		opponentShips.addAll(Arrays.asList(ac, bs, cr, de, hc));
-
-		for (int i = 0; i < opponentShips.size(); i++)
-			System.out.println("Ships Remaining: " + opponentShips.get(i).getType());
 
 		this.ourShips = new ArrayList<Ship>();
 		this.opponentHitShotsStats = new HashMap<Point, Integer>();
@@ -122,7 +113,7 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public int getVersion() {
-		return Integer.MAX_VALUE;
+		return 2;
 	}
 
 	@Override
@@ -139,17 +130,32 @@ public class FinalPlayer implements Player {
 	public void newGame(Integer timeSpan) {
 		// block off top right of field
 		// populate initial grid with empty spaces (for display)
-		for (int i = 0; i < 11; i++) {
-			for (int j = 0; j < 11; j++) {
+		for (int i = 0; i < 12; i++) {
+			for (int j = 0; j < 12; j++) {
 				opponentGrid[i][j] = boardStates.UNUSED;
 			}
 		}
 		// Invalidate initial corner of grid
-		for (int i = 6; i < 11; i++) {
-			for (int j = 0; j < 7; j++) {
+		for (int i = 6; i < 12; i++) {
+			for (int j = 0; j < 6; j++) {
 				opponentGrid[i][j] = boardStates.INVALID; // invalid
 			}
 		}
+
+		targetsLeft = new ArrayList<Target>();
+		targetsLeft.add(new Target(ShipType.Destroyer, true));
+		targetsLeft.add(new Target(ShipType.Destroyer, false));
+		targetsLeft.add(new Target(ShipType.Cruiser, true));
+		targetsLeft.add(new Target(ShipType.Cruiser, false));
+		targetsLeft.add(new Target(ShipType.Battleship, true));
+		targetsLeft.add(new Target(ShipType.Battleship, false));
+		targetsLeft.add(new Target(ShipType.Hovercraft, true));
+		targetsLeft.add(new Target(ShipType.Hovercraft, false));
+		targetsLeft.add(new Target(ShipType.AircraftCarrier, true));
+		targetsLeft.add(new Target(ShipType.AircraftCarrier, false));
+		hitSet = new HitSet();
+		largeControl = true;
+
 	}
 
 	@Override
@@ -168,7 +174,6 @@ public class FinalPlayer implements Player {
 		for (Point p : opponentHitShotsStats.keySet()) {
 			sortedOpponentHitShots.put(opponentHitShotsStats.get(p), p);
 		}
-		// System.out.println(sortedOppentHitShots);
 
 		for (Ship s : ships) {
 
@@ -264,11 +269,15 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public Point getShot() {
+		Point returnedShot;
 		if (largeControl) {
-			return largeShot();
+			returnedShot = largeShot();
 		} else {
-			return smallShot();
+			returnedShot = smallShot();
 		}
+		System.out.println("Large control :" + largeControl);
+		System.out.println("Next Shot x:" + returnedShot.x + " y:" + returnedShot.y);
+		return returnedShot;
 	}
 
 	@Override
@@ -305,28 +314,96 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public void shotHit(Point shot, boolean sunk) {
-		// we've hit something! Take control and give it to smallShot
-		if (!sunk) {
-			largeControl = false;
-			lastHit = shot;
-		} else {
-			// since we don't have handling yet
-			largeControl = true;
+		System.out.println("Hit");
+		largeControl = false;
+		opponentGrid[shot.x][shot.y] = boardStates.HIT;
+		hitSet.add(shot);
+		if (sunk) {
+			System.out.println("Sunk");
+			List<Target> possiblySunk = new ArrayList<Target>(targetsLeft);
+			for (Target current : targetsLeft) {
+				if (shipMatches(current)) {
+					possiblySunk.add(current);
+				}
+			}
+			if (possiblySunk.size() == 2) {
+				targetsLeft.removeAll(possiblySunk);
+			}
+			if (!(possiblySunk.size() == 0)) {
+				largeControl = true;
+				hitSet = new HitSet();
+			}
 		}
+	}
+
+	private boolean shipMatches(Target target) {
+		System.out.println("Hitset x's:" + hitSet.numberOfEachX().size() + " y's:" + hitSet.numberOfEachY().size());
+		switch (target.getType()) {
+		case Destroyer:
+			System.out.println("Trying to match destroyer");
+			if (hitSet.size() == 2) {
+				System.out.println("Matched");
+				return true;
+			}
+			break;
+		case Cruiser:
+			System.out.println("Trying to match cruiser");
+			if (hitSet.numberOfEachX().size() == 3 && hitSet.numberOfEachY().size() == 1) {
+				System.out.println("Matched");
+				return true;
+			}
+			if (hitSet.numberOfEachX().size() == 1 && hitSet.numberOfEachY().size() == 3) {
+				System.out.println("Matched");
+				return true;
+			}
+			break;
+		case Battleship:
+			System.out.println("Trying to match battleship");
+			if (hitSet.numberOfEachX().size() == 4 && hitSet.numberOfEachY().size() == 1) {
+				System.out.println("Matched");
+				return true;
+			}
+			if (hitSet.numberOfEachX().size() == 1 && hitSet.numberOfEachY().size() == 4) {
+				System.out.println("Matched");
+				return true;
+			}
+			break;
+		case AircraftCarrier:
+			System.out.println("Trying to match aircraft carrier");
+			if (hitSet.numberOfEachX().size() == 4 && hitSet.numberOfEachY().size() == 3) {
+				System.out.println("Matched");
+				return true;
+			}
+			if (hitSet.numberOfEachX().size() == 3 && hitSet.numberOfEachY().size() == 4) {
+				System.out.println("Matched");
+				return true;
+			}
+		case Hovercraft:
+			System.out.println("Trying to match hovercraft");
+			if (hitSet.numberOfEachX().size() == 3 && hitSet.numberOfEachY().size() == 3) {
+				System.out.println("Matched");
+				return true;
+			}
+		}
+		return false;
 
 	}
 
 	@Override
 	public void shotMiss(Point shot) {
+		System.out.println("Miss");
+		opponentGrid[shot.x][shot.y] = boardStates.MISS;
 	}
 
 	@Override
 	public void gameWon() {
+		System.out.println("Won------------------------------------------------------------");
 		gameCounter++;
 	}
 
 	@Override
 	public void gameLost() {
+		System.out.println("Lost------------------------------------------------------------");
 		gameCounter++;
 	}
 
@@ -476,85 +553,390 @@ public class FinalPlayer implements Player {
 		return total / counter;
 	}
 
+	private Point smallShot() {
+		Set<Shot> nextPossibleShots = new HashSet<Shot>();
+		for (Point currentHit : hitSet) {
+			if (pointIsValid(new Point(currentHit.x - 1, currentHit.y - 1))) {
+				nextPossibleShots.add(new Shot(currentHit.x - 1, currentHit.y - 1));
+			}
+			if (pointIsValid(new Point(currentHit.x, currentHit.y - 1))) {
+				nextPossibleShots.add(new Shot(currentHit.x, currentHit.y - 1));
+			}
+			if (pointIsValid(new Point(currentHit.x + 1, currentHit.y - 1))) {
+				nextPossibleShots.add(new Shot(currentHit.x + 1, currentHit.y - 1));
+			}
+			if (pointIsValid(new Point(currentHit.x - 1, currentHit.y))) {
+				nextPossibleShots.add(new Shot(currentHit.x - 1, currentHit.y));
+			}
+			if (pointIsValid(new Point(currentHit.x + 1, currentHit.y))) {
+				nextPossibleShots.add(new Shot(currentHit.x + 1, currentHit.y));
+			}
+			if (pointIsValid(new Point(currentHit.x - 1, currentHit.y + 1))) {
+				nextPossibleShots.add(new Shot(currentHit.x - 1, currentHit.y + 1));
+			}
+			if (pointIsValid(new Point(currentHit.x, currentHit.y + 1))) {
+				nextPossibleShots.add(new Shot(currentHit.x, currentHit.y + 1));
+			}
+			if (pointIsValid(new Point(currentHit.x + 1, currentHit.y + 1))) {
+				nextPossibleShots.add(new Shot(currentHit.x + 1, currentHit.y + 1));
+			}
+		}
+		List<Shot> usedShots = new ArrayList<Shot>();
+		for (Shot current : nextPossibleShots) {
+			if (opponentGrid[current.getX()][current.getY()] != boardStates.UNUSED) {
+				usedShots.add(current);
+			}
+		}
+		nextPossibleShots.removeAll(usedShots);
+		List<Target> possibleTargets = new ArrayList<Target>();
+		for (Target target : targetsLeft) {
+			if (shipFits(target)) {
+				possibleTargets.add(target);
+			}
+		}
+		System.out.println("Still could be:");
+		for (Target possibility : possibleTargets) {
+			System.out.println(possibility.getType() + " which is vertical " + possibility.isVertical());
+			addPossibilities(nextPossibleShots, possibility);
+		}
+		Shot nextShot = new Shot(-1, -1);
+		int maxNoUses = -1;
+		for (Shot currentShot : nextPossibleShots) {
+			if (currentShot.getUsefullnness() > maxNoUses) {
+				nextShot = currentShot;
+				maxNoUses = currentShot.getUsefullnness();
+			}
+		}
+		if (nextShot.getX() == -1) {
+			largeControl = true;
+			return largeShot();
+		}
+		return new Point(nextShot.getX(), nextShot.getY());
+	}
+
+	private void addPossibilities(Set<Shot> nextShots, Target target) {
+		switch (target.getType()) {
+		case Destroyer:
+			// Know hit set has size one or couldn't be a destroyer so add one
+			// to four surrounding squares
+			for (Point startingPoint : hitSet) {
+				for (Shot possibleShot : nextShots) {
+					if ((Math.abs(startingPoint.x - possibleShot.getX()) == 1
+							&& Math.abs(startingPoint.y - possibleShot.getY()) == 0)
+							|| (Math.abs(startingPoint.y - possibleShot.getY()) == 1
+									&& Math.abs(startingPoint.x - possibleShot.getX()) == 0)) {
+						possibleShot.possibleUse();
+					}
+				}
+			}
+			break;
+		case Cruiser:
+			if (target.isVertical()) {
+				for (Point startingPoint : hitSet) {
+					for (Shot possibleShot : nextShots) {
+						if ((Math.abs(startingPoint.x - possibleShot.getX()) == 0
+								&& Math.abs(startingPoint.y - possibleShot.getY()) == 1)) {
+							// Know possible shots is only where you might want
+							// to shoot so if one up
+							// or down is in it you must be at the edge.
+							possibleShot.possibleUse();
+						}
+					}
+				}
+			} else {
+				for (Point startingPoint : hitSet) {
+					for (Shot possibleShot : nextShots) {
+						if ((Math.abs(startingPoint.x - possibleShot.getX()) == 1
+								&& Math.abs(startingPoint.y - possibleShot.getY()) == 0)) {
+							// Know possible shots is only where you might want
+							// to shoot so if one left
+							// or right is in it you must be at the edge.
+							possibleShot.possibleUse();
+						}
+					}
+				}
+			}
+			break;
+		case Battleship:
+			if (target.isVertical()) {
+				for (Point startingPoint : hitSet) {
+					for (Shot possibleShot : nextShots) {
+						if ((Math.abs(startingPoint.x - possibleShot.getX()) == 0
+								&& Math.abs(startingPoint.y - possibleShot.getY()) == 1)) {
+							// Know possible shots is only where you might want
+							// to shoot so if one up
+							// or down is in it you must be at the edge.
+							possibleShot.possibleUse();
+						}
+					}
+				}
+			} else {
+				for (Point startingPoint : hitSet) {
+					for (Shot possibleShot : nextShots) {
+						if ((Math.abs(startingPoint.x - possibleShot.getX()) == 1
+								&& Math.abs(startingPoint.y - possibleShot.getY()) == 0)) {
+							// Know possible shots is only where you might want
+							// to shoot so if one up
+							// or down is in it you must be at the edge.
+							possibleShot.possibleUse();
+						}
+					}
+				}
+			}
+			break;
+		case Hovercraft:
+			switch (hitSet.size()) {
+			case 1:
+				// Only one so far could be anywhere around it
+				for (Shot possibleShot : nextShots) {
+					for (Point current : hitSet) {
+						if (Math.abs(possibleShot.getX() - current.x) < 2
+								&& Math.abs(possibleShot.getY() - current.y) < 2) {
+							possibleShot.possibleUse();
+						}
+					}
+				}
+				break;
+			case 2:
+				if (twoTouching() != null) {
+					// Two in a row
+					List<Shot> usefulShots = new ArrayList<Shot>();
+					List<Point> hitList = new ArrayList<Point>();
+					if (hitSet.numberOfEachY().size() == 2) {
+						// The two are going vertically
+						hitList.addAll(hitSet);
+						int biggerY;
+						int smallerY;
+						if (hitList.get(0).getY() > hitList.get(1).getY()) {
+							biggerY = 0;
+							smallerY = 1;
+						} else {
+							biggerY = 1;
+							smallerY = 0;
+						}
+						usefulShots.add(new Shot(hitList.get(biggerY).y + 1, hitList.get(biggerY).x - 1));
+						usefulShots.add(new Shot(hitList.get(biggerY).y + 1, hitList.get(biggerY).x + 1));
+						usefulShots.add(new Shot(hitList.get(smallerY).y - 1, hitList.get(biggerY).x - 1));
+						usefulShots.add(new Shot(hitList.get(smallerY).y - 1, hitList.get(biggerY).x + 1));
+					} else {
+						// The two are going horizontally
+						hitList.addAll(hitSet);
+						int biggerX;
+						int smallerX;
+						if (hitList.get(0).getX() > hitList.get(1).getX()) {
+							biggerX = 0;
+							smallerX = 1;
+						} else {
+							biggerX = 1;
+							smallerX = 0;
+						}
+						usefulShots.add(new Shot(hitList.get(biggerX).x + 1, hitList.get(biggerX).y - 1));
+						usefulShots.add(new Shot(hitList.get(biggerX).x + 1, hitList.get(biggerX).y + 1));
+						usefulShots.add(new Shot(hitList.get(smallerX).x - 1, hitList.get(biggerX).y - 1));
+						usefulShots.add(new Shot(hitList.get(smallerX).x - 1, hitList.get(biggerX).y + 1));
+					}
+					for (Shot current : nextShots) {
+						if (usefulShots.contains(current)) {
+							current.possibleUse();
+						}
+					}
+				} else {
+					List<Point> hitList = new ArrayList<Point>(hitSet);
+					List<Shot> usefulShots = new ArrayList<Shot>();
+					if (hitList.get(0).x > hitList.get(1).x) {
+						usefulShots.add(new Shot(hitList.get(0).x + 1, hitList.get(0).y));
+						usefulShots.add(new Shot(hitList.get(1).x - 1, hitList.get(1).y));
+					} else {
+						usefulShots.add(new Shot(hitList.get(1).x + 1, hitList.get(1).y));
+						usefulShots.add(new Shot(hitList.get(0).x - 1, hitList.get(0).y));
+					}
+					if (hitList.get(0).y > hitList.get(1).y) {
+						usefulShots.add(new Shot(hitList.get(0).x, hitList.get(0).y + 1));
+						usefulShots.add(new Shot(hitList.get(1).x, hitList.get(1).y - 1));
+					} else {
+						usefulShots.add(new Shot(hitList.get(1).x, hitList.get(1).y + 1));
+						usefulShots.add(new Shot(hitList.get(0).x, hitList.get(0).y - 1));
+					}
+				}
+				break;
+			default:
+				List<Point> twoTouching = twoTouching();
+				List<Shot> usefulShots = new ArrayList<Shot>();
+				if (twoTouching == null) {
+					return;
+				}
+				if (twoTouching.get(0).x == twoTouching.get(1).x) {
+					// vertical
+					for (Point current : hitSet) {
+						if (current.x != twoTouching.get(0).x) {
+							// Current is single square
+							if (current.x > twoTouching.get(0).x) {
+								usefulShots.add(new Shot(twoTouching.get(0).x + 2, twoTouching.get(0).y));
+								usefulShots.add(new Shot(twoTouching.get(1).x + 2, twoTouching.get(1).y));
+							} else {
+								usefulShots.add(new Shot(twoTouching.get(0).x - 2, twoTouching.get(0).y));
+								usefulShots.add(new Shot(twoTouching.get(1).x - 2, twoTouching.get(1).y));
+							}
+						}
+					}
+				} else {
+					// Horizontal
+					for (Point current : hitSet) {
+						if (current.y != twoTouching.get(0).y) {
+							// Current is single square
+							if (current.y > twoTouching.get(0).y) {
+								usefulShots.add(new Shot(twoTouching.get(0).x, twoTouching.get(0).y + 2));
+								usefulShots.add(new Shot(twoTouching.get(1).x, twoTouching.get(1).y + 2));
+							} else {
+								usefulShots.add(new Shot(twoTouching.get(0).x - 2, twoTouching.get(0).y - 2));
+								usefulShots.add(new Shot(twoTouching.get(1).x - 2, twoTouching.get(1).y - 2));
+							}
+						}
+					}
+				}
+				for (Shot current : nextShots) {
+					if (usefulShots.contains(current)) {
+						current.possibleUse();
+					}
+				}
+			}
+			break;
+		case AircraftCarrier:
+			List<int[]> numberOfEachY = hitSet.numberOfEachY();
+			List<int[]> numberOfEachX = hitSet.numberOfEachX();
+			int xLimit;
+			int yLimit;
+			if (target.isVertical()) {
+				xLimit = 3;
+				yLimit = 4;
+			} else {
+				xLimit = 4;
+				yLimit = 3;
+			}
+			if (numberOfEachX.size() < xLimit) {
+				// We are still looking for another x
+				boolean oneYIsBigger = false;
+				int biggestY = 1;
+				for (int[] current : numberOfEachY) {
+					if (current[1] > 1) {
+						oneYIsBigger = true;
+						biggestY = current[0];
+					}
+				}
+				if (oneYIsBigger) {
+					// Know which y line the x will be on
+					for (Shot possibleShot : nextShots) {
+						if (possibleShot.getY() == biggestY) {
+							possibleShot.possibleUse();
+						}
+					}
+				} else {
+					// Don't know which y line it'll be on could be anywhere
+					// there's a y
+					for (Shot possibleShot : nextShots) {
+						for (Point blah : hitSet) {
+							if (possibleShot.getY() == blah.y) {
+								possibleShot.possibleUse();
+							}
+						}
+					}
+				}
+			}
+			if (numberOfEachY.size() < yLimit) {
+				// We are still looking for another Y
+				boolean oneXIsBigger = false;
+				int biggestX = 1;
+				for (int[] current : numberOfEachX) {
+					if (current[1] > 1) {
+						oneXIsBigger = true;
+						biggestX = current[0];
+					}
+				}
+				if (oneXIsBigger) {
+					// Know which x line the y will be on
+					for (Shot possibleShot : nextShots) {
+						if (possibleShot.getX() == biggestX) {
+							possibleShot.possibleUse();
+						}
+					}
+				} else {
+					// Don't know which x line it'll be on could be anywhere
+					// there's a x
+					for (Shot possibleShot : nextShots) {
+						for (Point blah : hitSet) {
+							if (possibleShot.getX() == blah.x) {
+								possibleShot.possibleUse();
+							}
+						}
+					}
+				}
+			}
+			break;
+		}
+	}
+
+	private List<Point> twoTouching() {
+		List<Point> twoTouching = new ArrayList<Point>();
+		for (Point first : hitSet) {
+			for (Point second : hitSet) {
+				if (((first.getX() == second.getX()) && Math.abs(first.getY() - second.getY()) == 1)
+						|| ((first.getY() == second.getY()) && Math.abs(first.getX() - second.getX()) == 1)) {
+					twoTouching.add(first);
+					twoTouching.add(second);
+					return twoTouching;
+				}
+			}
+		}
+		return null;
+	}
+
 	private Point largeShot() {
 		int currentMinUse = getSquareUse(0);
-		int nextSquare;
 		ArrayList<Integer> posSquares = new ArrayList<Integer>();
+		posSquares.add(0);
+		/*
+		 * for (int i = 0; i < 12; i++) { System.out.println(); for (int j = 0;
+		 * j < 12; j++) { System.out.print(" "+opponentGrid[i][j]+" "); } }
+		 */
 		for (int i = 1; i < 27; i++) {
 			if (getSquareUse(i) < currentMinUse) {
+				currentMinUse = getSquareUse(i);
 				posSquares.clear();
 				posSquares.add(i);
 			}
 		}
-		nextSquare = posSquares.get(rand.nextInt(posSquares.size() - 1));
+		// System.out.println("So choosing squares from:");
+		for (int current : posSquares) {
+			System.out.println(current);
+		}
+		int nextSquare = posSquares.get(rand.nextInt(posSquares.size()));
 		return bestPointFromSquare(nextSquare);
-	}
-
-	private Point smallShot() {
-
-		// get positions around the shot and their status
-		Map<Point, boardStates> localPos = new HashMap<Point, boardStates>();
-		localPos.put(new Point(lastHit.x - 1, lastHit.y), opponentGrid[lastHit.x - 1][lastHit.y]);
-		localPos.put(new Point(lastHit.x + 1, lastHit.y), opponentGrid[lastHit.x + 1][lastHit.y]);
-		localPos.put(new Point(lastHit.x, lastHit.y - 1), opponentGrid[lastHit.x][lastHit.y - 1]);
-		localPos.put(new Point(lastHit.x, lastHit.y + 1), opponentGrid[lastHit.x][lastHit.y + 1]);
-		localPos.put(new Point(lastHit.x - 1, lastHit.y - 1), opponentGrid[lastHit.x - 1][lastHit.y - 1]);
-		localPos.put(new Point(lastHit.x + 1, lastHit.y + 1), opponentGrid[lastHit.x + 1][lastHit.y + 1]);
-		localPos.put(new Point(lastHit.x - 1, lastHit.y + 1), opponentGrid[lastHit.x - 1][lastHit.y + 1]);
-		localPos.put(new Point(lastHit.x + 1, lastHit.y - 1), opponentGrid[lastHit.x + 1][lastHit.y - 1]);
-
-		for (int i = 0; i < localPos.size(); i++) {
-			if (!localPos.get(i).equals(boardStates.UNUSED)) {
-				localPos.remove(i);
-			}
-		}
-
-		List<Point> localPoints = new ArrayList<Point>();
-		localPoints.addAll(localPos.keySet());
-
-		for (int i = 0; i < localPoints.size(); i++) {
-			Point p = localPoints.get(i);
-			// switch () {
-			// default:
-			// break;
-			//
-			// }
-			// switch such that if the space opposite an empty one is a hit, try
-			// that one over others
-		}
-
-		return localPoints.get(rand.nextInt(localPoints.size() - 1));
-
-		// // guess randomly - just here to avoid an exception in this commit
-		// int x = rand.nextInt(12);
-		// int y = rand.nextInt(12);
-		//
-		// while (x >= 6 && y <= 6) {
-		// x = rand.nextInt(12);
-		// y = rand.nextInt(12);
-		// }
-		// return new Point(x, y);
 	}
 
 	private int getSquareUse(int square) {
 		int uses = 0;
 		Point startCoOrd = squareMap.get(square);
-		if (opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.HIT)
-				|| opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.MISS)) {
+		if (!opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.UNUSED)) {
+			// System.out.println("Square "+square+" first");
 			uses++;
 		}
-		if (opponentGrid[startCoOrd.x][startCoOrd.y + 1].equals(boardStates.HIT)
-				|| opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.MISS)) {
+		if (!opponentGrid[startCoOrd.x][startCoOrd.y + 1].equals(boardStates.UNUSED)) {
+			// System.out.println("Square "+square+" second");
 			uses++;
 		}
-		if (opponentGrid[startCoOrd.x + 1][startCoOrd.y].equals(boardStates.HIT)
-				|| opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.MISS)) {
+		if (!opponentGrid[startCoOrd.x + 1][startCoOrd.y].equals(boardStates.UNUSED)) {
+			// System.out.println("Square "+square+" third");
 			uses++;
 		}
-		if (opponentGrid[startCoOrd.x + 1][startCoOrd.y + 1].equals(boardStates.HIT)
-				|| opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.MISS)) {
+		if (!opponentGrid[startCoOrd.x + 1][startCoOrd.y + 1].equals(boardStates.UNUSED)) {
+			// System.out.println("Square "+square+" fourth");
 			uses++;
 		}
+		// System.out.println("Square use "+square+" uses: "+uses);
+		// System.out.println(opponentGrid[startCoOrd.x][startCoOrd.y]);
+		// System.out.println(opponentGrid[startCoOrd.x+1][startCoOrd.y]);
+		// System.out.println(opponentGrid[startCoOrd.x][startCoOrd.y+1]);
+		// System.out.println(opponentGrid[startCoOrd.x+1][startCoOrd.y+1]);
 		return uses;
 	}
 
@@ -567,8 +949,16 @@ public class FinalPlayer implements Player {
 		possiblePoints.add(new Point(squareMap.get(square).x, squareMap.get(square).y + 1));
 		possiblePoints.add(new Point(squareMap.get(square).x + 1, squareMap.get(square).y));
 		possiblePoints.add(new Point(squareMap.get(square).x + 1, squareMap.get(square).y + 1));
+		List<Point> pointlessPoints = new ArrayList<Point>();
+		for (Point current : possiblePoints) {
+			if (opponentGrid[current.x][current.y] != boardStates.UNUSED) {
+				pointlessPoints.add(current);
+			}
+		}
+		possiblePoints.removeAll(pointlessPoints);
 		minUsage = getLocalUsage(possiblePoints.get(0));
-		for (int i = 1; i < 4; i++) {
+		possibleMinima.add(0);
+		for (int i = 1; i < possiblePoints.size(); i++) {
 			currentUsage = getLocalUsage(possiblePoints.get(i));
 			if (currentUsage < minUsage) {
 				minUsage = currentUsage;
@@ -578,7 +968,7 @@ public class FinalPlayer implements Player {
 				possibleMinima.add(i);
 			}
 		}
-		return possiblePoints.get(possibleMinima.get(rand.nextInt(possibleMinima.size() - 1)));
+		return possiblePoints.get(possibleMinima.get(rand.nextInt(possibleMinima.size())));
 		// Work out points around square to be used using pointIsValid method.
 		// Loop through these if they've been used add 1 to a square diagonally
 		// next to and 2 to a square directly next to.
@@ -588,17 +978,31 @@ public class FinalPlayer implements Player {
 	private int getLocalUsage(Point possibleTarget) {
 		int localUsage = 0;
 		List<Point> lowImportancePossibilities = new ArrayList<Point>();
-		lowImportancePossibilities.add(new Point(possibleTarget.x - 1, possibleTarget.y - 1));
-		lowImportancePossibilities.add(new Point(possibleTarget.x - 1, possibleTarget.y + 1));
-		lowImportancePossibilities.add(new Point(possibleTarget.x + 1, possibleTarget.y - 1));
-		lowImportancePossibilities.add(new Point(possibleTarget.x + 1, possibleTarget.y + 1));
-		lowImportancePossibilities = removeInvalid(lowImportancePossibilities);
+		if (pointIsValid(new Point(possibleTarget.x - 1, possibleTarget.y - 1))) {
+			lowImportancePossibilities.add(new Point(possibleTarget.x - 1, possibleTarget.y - 1));
+		}
+		if (pointIsValid(new Point(possibleTarget.x - 1, possibleTarget.y + 1))) {
+			lowImportancePossibilities.add(new Point(possibleTarget.x - 1, possibleTarget.y + 1));
+		}
+		if (pointIsValid(new Point(possibleTarget.x + 1, possibleTarget.y - 1))) {
+			lowImportancePossibilities.add(new Point(possibleTarget.x + 1, possibleTarget.y - 1));
+		}
+		if (pointIsValid(new Point(possibleTarget.x + 1, possibleTarget.y + 1))) {
+			lowImportancePossibilities.add(new Point(possibleTarget.x + 1, possibleTarget.y + 1));
+		}
 		List<Point> highImportancePossibilities = new ArrayList<Point>();
-		highImportancePossibilities.add(new Point(possibleTarget.x - 1, possibleTarget.y));
-		highImportancePossibilities.add(new Point(possibleTarget.x + 1, possibleTarget.y));
-		highImportancePossibilities.add(new Point(possibleTarget.x, possibleTarget.y + 1));
-		highImportancePossibilities.add(new Point(possibleTarget.x, possibleTarget.y - 1));
-		highImportancePossibilities = removeInvalid(highImportancePossibilities);
+		if (pointIsValid(new Point(possibleTarget.x - 1, possibleTarget.y))) {
+			highImportancePossibilities.add(new Point(possibleTarget.x - 1, possibleTarget.y));
+		}
+		if (pointIsValid(new Point(possibleTarget.x + 1, possibleTarget.y))) {
+			highImportancePossibilities.add(new Point(possibleTarget.x + 1, possibleTarget.y));
+		}
+		if (pointIsValid(new Point(possibleTarget.x, possibleTarget.y + 1))) {
+			highImportancePossibilities.add(new Point(possibleTarget.x, possibleTarget.y + 1));
+		}
+		if (pointIsValid(new Point(possibleTarget.x, possibleTarget.y - 1))) {
+			highImportancePossibilities.add(new Point(possibleTarget.x, possibleTarget.y - 1));
+		}
 		for (Point currentPoint : lowImportancePossibilities) {
 			if (opponentGrid[currentPoint.x][currentPoint.y].equals(boardStates.HIT)
 					|| opponentGrid[currentPoint.x][currentPoint.y].equals(boardStates.MISS)) {
@@ -609,31 +1013,69 @@ public class FinalPlayer implements Player {
 			if (opponentGrid[currentPoint.x][currentPoint.y].equals(boardStates.HIT)
 					|| opponentGrid[currentPoint.x][currentPoint.y].equals(boardStates.MISS)) {
 				localUsage++;
+				localUsage++;
 			}
 		}
 		return localUsage;
 	}
 
-	private List<Point> removeInvalid(List<Point> clearUp) {
-		List<Point> invalidPoints = new ArrayList<Point>();
-		for (Point currentPoint : clearUp) {
-			if (pointIsInvalid(currentPoint)) {
-				invalidPoints.add(currentPoint);
+	private boolean pointIsValid(Point p) {
+		return (p.x < 12 && p.x > -1 && p.y < 12 && p.y > -1 && (!(p.x > 5 && p.y < 6)));
+	}
+
+	private boolean shipFits(Target target) {
+		switch (target.getType()) {
+		case Destroyer:
+			if (hitSet.size() == 1) {
+				return true;
+			}
+			break;
+		case Cruiser:
+			if (hitSet.numberOfEachX().size() < 3 && hitSet.numberOfEachY().size() < 2 && (!target.isVertical())) {
+				return true;
+			}
+			if (hitSet.numberOfEachX().size() < 2 && hitSet.numberOfEachY().size() < 3 && target.isVertical()) {
+				return true;
+			}
+			break;
+		case Battleship:
+			if (hitSet.numberOfEachX().size() < 4 && hitSet.numberOfEachY().size() < 2 && (!target.isVertical())) {
+				return true;
+			}
+			if (hitSet.numberOfEachX().size() < 2 && hitSet.numberOfEachY().size() < 4 && target.isVertical()) {
+				return true;
+			}
+			break;
+		case AircraftCarrier:
+			if (hitSet.numberOfEachX().size() < 5 && hitSet.numberOfEachY().size() < 4 && (!target.isVertical())) {
+				return true;
+			}
+			if (hitSet.numberOfEachX().size() < 4 && hitSet.numberOfEachY().size() < 5 && target.isVertical()) {
+				return true;
+			}
+			break;
+		case Hovercraft:
+			switch (hitSet.size()) {
+			case 1:
+				return true;
+			case 2:
+				return true;
+			case 3:
+				// If there's 3 in the same row can't be hovercraft
+				for (int[] current : hitSet.numberOfEachX()) {
+					if (current[1] > 2) {
+						return false;
+					}
+				}
+				for (int[] current : hitSet.numberOfEachY()) {
+					if (current[1] > 2) {
+						return false;
+					}
+				}
 			}
 		}
-		clearUp.removeAll(invalidPoints);
-		return clearUp;
+		return false;
+
 	}
 
-	private boolean pointIsInvalid(Point p) {
-		return ((p.x > 5) && (p.y < 6));
-	}
-
-	// private Point getNearestSquare(Point currentPoint) {
-	// int newX = currentPoint.x / 2;
-	// newX = newX * 2;
-	// int newY = currentPoint.y / 2;
-	// newY = newY * 2;
-	// return new Point(newX, newY);
-	// }
 }

@@ -13,8 +13,8 @@ import com.innovation.battleships.player.SecondAttempt;
 public class Main {
 
 	public static void main(String[] args) {
-		Player op1 = new RandomPlayer();
-		Player op2 = new SecondAttempt();
+		Player op1 = new SecondAttempt();
+		Player op2 = new FinalPlayer();
 
 		BattleshipCompetition bc = new BattleshipCompetition(op1, op2, 500, 500, false);
 		HashMap<Player, Integer> scores = bc.runCompetition();
