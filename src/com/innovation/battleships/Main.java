@@ -7,7 +7,6 @@ import java.util.Map;
 import com.innovation.battleships.engine.BattleshipCompetition;
 import com.innovation.battleships.engine.Player;
 import com.innovation.battleships.player.FinalPlayer;
-import com.innovation.battleships.player.RandomPlayer;
 import com.innovation.battleships.player.SecondAttempt;
 
 public class Main {
