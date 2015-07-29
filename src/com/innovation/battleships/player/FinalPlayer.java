@@ -41,8 +41,6 @@ public class FinalPlayer implements Player {
 	// keep the entire statistics of where we have been hit, while one above
 	// only black positions
 	// where we have been successfully hit more than 10 time
-
-	// private Set<Point> opponentHitShots;
 	private Map<Point, Integer> opponentHitShotsStats;
 	private int gameCounter;
 	private PositioningType specialPositioning;
@@ -113,7 +111,7 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public int getVersion() {
-		return 2;
+		return 3;
 	}
 
 	@Override
@@ -265,12 +263,6 @@ public class FinalPlayer implements Player {
 				}
 			}
 		}
-
-		System.out.println("Default:" + positionSunkStatsDefault);
-		System.out.println("Corner:" + positionSunkStatsCorner);
-		System.out.println("Middle:" + positionSunkStatsMiddle);
-		System.out.println("Together: " + positionSunkStatsTogether);
-
 	}
 
 	@Override
@@ -281,8 +273,6 @@ public class FinalPlayer implements Player {
 		} else {
 			returnedShot = smallShot();
 		}
-		System.out.println("Large control :" + largeControl);
-		System.out.println("Next Shot x:" + returnedShot.x + " y:" + returnedShot.y);
 		return returnedShot;
 	}
 
@@ -310,12 +300,10 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public void shotHit(Point shot, boolean sunk) {
-		System.out.println("Hit");
 		largeControl = false;
 		opponentGrid[shot.x][shot.y] = boardStates.HIT;
 		hitSet.add(shot);
 		if (sunk) {
-			System.out.println("Sunk");
 			List<Target> possiblySunk = new ArrayList<Target>(targetsLeft);
 			for (Target current : targetsLeft) {
 				if (shipMatches(current)) {
@@ -333,51 +321,37 @@ public class FinalPlayer implements Player {
 	}
 
 	private boolean shipMatches(Target target) {
-		System.out.println("Hitset x's:" + hitSet.numberOfEachX().size() + " y's:" + hitSet.numberOfEachY().size());
 		switch (target.getType()) {
 		case Destroyer:
-			System.out.println("Trying to match destroyer");
 			if (hitSet.size() == 2) {
-				System.out.println("Matched");
 				return true;
 			}
 			break;
 		case Cruiser:
-			System.out.println("Trying to match cruiser");
 			if (hitSet.numberOfEachX().size() == 3 && hitSet.numberOfEachY().size() == 1) {
-				System.out.println("Matched");
 				return true;
 			}
 			if (hitSet.numberOfEachX().size() == 1 && hitSet.numberOfEachY().size() == 3) {
-				System.out.println("Matched");
 				return true;
 			}
 			break;
 		case Battleship:
-			System.out.println("Trying to match battleship");
 			if (hitSet.numberOfEachX().size() == 4 && hitSet.numberOfEachY().size() == 1) {
-				System.out.println("Matched");
 				return true;
 			}
 			if (hitSet.numberOfEachX().size() == 1 && hitSet.numberOfEachY().size() == 4) {
-				System.out.println("Matched");
 				return true;
 			}
 			break;
 		case AircraftCarrier:
-			System.out.println("Trying to match aircraft carrier");
 			if (hitSet.numberOfEachX().size() == 4 && hitSet.numberOfEachY().size() == 3) {
-				System.out.println("Matched");
 				return true;
 			}
 			if (hitSet.numberOfEachX().size() == 3 && hitSet.numberOfEachY().size() == 4) {
-				System.out.println("Matched");
 				return true;
 			}
 		case Hovercraft:
-			System.out.println("Trying to match hovercraft");
 			if (hitSet.numberOfEachX().size() == 3 && hitSet.numberOfEachY().size() == 3) {
-				System.out.println("Matched");
 				return true;
 			}
 		}
@@ -387,19 +361,16 @@ public class FinalPlayer implements Player {
 
 	@Override
 	public void shotMiss(Point shot) {
-		System.out.println("Miss");
 		opponentGrid[shot.x][shot.y] = boardStates.MISS;
 	}
 
 	@Override
 	public void gameWon() {
-		System.out.println("Won------------------------------------------------------------");
 		gameCounter++;
 	}
 
 	@Override
 	public void gameLost() {
-		System.out.println("Lost------------------------------------------------------------");
 		gameCounter++;
 	}
 
@@ -420,13 +391,12 @@ public class FinalPlayer implements Player {
 			specialPositioning = PositioningType.TOGETHER;
 			break;
 		}
-		
-		
-		int relativePosition=0;
-		if (specialPositioning==PositioningType.MIDDLE || specialPositioning==PositioningType.TOGETHER){
+
+		int relativePosition = 0;
+		if (specialPositioning == PositioningType.MIDDLE || specialPositioning == PositioningType.TOGETHER) {
 			relativePosition = rand.nextInt(2);
 		}
-			
+
 		switch (s.getType()) {
 		case Destroyer:
 			switch (specialPositioning) {
@@ -434,10 +404,10 @@ public class FinalPlayer implements Player {
 				s.place(new Point(0, 0), orientations[0]);
 				break;
 			case MIDDLE:
-				s.place(new Point(2-relativePosition, 10), orientations[1]);
+				s.place(new Point(2 - relativePosition, 10), orientations[1]);
 				break;
 			case TOGETHER:
-				s.place(new Point(2+relativePosition, 9+relativePosition), orientations[1]);
+				s.place(new Point(2 + relativePosition, 9 + relativePosition), orientations[1]);
 				break;
 			default:
 				break;
@@ -449,10 +419,10 @@ public class FinalPlayer implements Player {
 				s.place(new Point(0, 3), orientations[0]);
 				break;
 			case MIDDLE:
-				s.place(new Point(7-relativePosition, 10), orientations[1]);
+				s.place(new Point(7 - relativePosition, 10), orientations[1]);
 				break;
 			case TOGETHER:
-				s.place(new Point(5+relativePosition, 9+relativePosition), orientations[1]);
+				s.place(new Point(5 + relativePosition, 9 + relativePosition), orientations[1]);
 				break;
 			default:
 				break;
@@ -464,10 +434,10 @@ public class FinalPlayer implements Player {
 				s.place(new Point(3, 11), orientations[1]);
 				break;
 			case MIDDLE:
-				s.place(new Point(2-relativePosition, 4), orientations[1]);
+				s.place(new Point(2 - relativePosition, 4), orientations[1]);
 				break;
 			case TOGETHER:
-				s.place(new Point(1+relativePosition, 5+relativePosition), orientations[1]);
+				s.place(new Point(1 + relativePosition, 5 + relativePosition), orientations[1]);
 				break;
 			default:
 				break;
@@ -479,10 +449,16 @@ public class FinalPlayer implements Player {
 				s.place(new Point(1, 0), orientations[3]);
 				break;
 			case MIDDLE:
-				s.place(new Point(4-relativePosition, 7), orientations[0]);// maybe 4/5 for y
+				s.place(new Point(4 - relativePosition, 7), orientations[0]);// maybe
+																				// 4/5
+																				// for
+																				// y
 				break;
 			case TOGETHER:
-				s.place(new Point(3+relativePosition, 7+relativePosition), orientations[0]);// maybe 4/5 for y
+				s.place(new Point(3 + relativePosition, 7 + relativePosition), orientations[0]);// maybe
+																								// 4/5
+																								// for
+																								// y
 				break;
 			default:
 				break;
@@ -494,10 +470,16 @@ public class FinalPlayer implements Player {
 				s.place(new Point(7, 8), orientations[0]);
 				break;
 			case MIDDLE:
-				s.place(new Point(4-relativePosition, 6), orientations[0]);// maybe 4 for y
+				s.place(new Point(4 - relativePosition, 6), orientations[0]);// maybe
+																				// 4
+																				// for
+																				// y
 				break;
 			case TOGETHER:
-				s.place(new Point(3+relativePosition, 6+relativePosition), orientations[0]);// maybe 4 for y
+				s.place(new Point(3 + relativePosition, 6 + relativePosition), orientations[0]);// maybe
+																								// 4
+																								// for
+																								// y
 				break;
 			default:
 				break;
@@ -508,24 +490,10 @@ public class FinalPlayer implements Player {
 
 	private int specialPositioningIsWorking() {
 
-		// TODO: fix selection of strategy, wrong chosen
-		// Average values calculated correctly
-		// not the correct strategy selected after this
 		int defaultPositioningAverageSunkTime = getAverage(positionSunkStatsDefault);
 		int cornerPositioningAverageSunkTime = getAverage(positionSunkStatsCorner);
 		int middlePositioningAverageSunkTime = getAverage(positionSunkStatsMiddle);
 		int togetherPositioningAverageSunkTime = getAverage(positionSunkStatsTogether);
-		// int positioning;
-		// int positioningValue;
-		// System.out.println("_____ Stats Below ___________");
-		// System.out.println("Default Positioining Average sunk time:" +
-		// defaultPositioningAverageSunkTime);
-		// System.out.println("Middle Positioining Average sunk time:" +
-		// middlePositioningAverageSunkTime);\
-		// System.out.println("Corner Positioining Average sunk time:" +
-		// cornerPositioningAverageSunkTime);
-		// System.out.println("Together Positioining Average sunk time:" +
-		// togetherPositioningAverageSunkTime);
 
 		if (cornerPositioningAverageSunkTime >= middlePositioningAverageSunkTime
 				&& cornerPositioningAverageSunkTime >= togetherPositioningAverageSunkTime
@@ -551,9 +519,9 @@ public class FinalPlayer implements Player {
 			total += game;
 			counter += 1;
 		}
-		
-		if (counter==0)
-			return 0; 
+
+		if (counter == 0)
+			return 0;
 		return total / counter;
 	}
 
@@ -598,9 +566,7 @@ public class FinalPlayer implements Player {
 				possibleTargets.add(target);
 			}
 		}
-		System.out.println("Still could be:");
 		for (Target possibility : possibleTargets) {
-			System.out.println(possibility.getType() + " which is vertical " + possibility.isVertical());
 			addPossibilities(nextPossibleShots, possibility);
 		}
 		Shot nextShot = new Shot(-1, -1);
@@ -896,23 +862,17 @@ public class FinalPlayer implements Player {
 
 	private Point largeShot() {
 		int currentMinUse = getSquareUse(0);
-		ArrayList<Integer> posSquares = new ArrayList<Integer>();
+		List<Integer> posSquares = new ArrayList<Integer>();
 		posSquares.add(0);
-		/*
-		 * for (int i = 0; i < 12; i++) { System.out.println(); for (int j = 0;
-		 * j < 12; j++) { System.out.print(" "+opponentGrid[i][j]+" "); } }
-		 */
+		
 		for (int i = 1; i < 27; i++) {
 			if (getSquareUse(i) < currentMinUse) {
 				currentMinUse = getSquareUse(i);
-				posSquares.clear();
+				 posSquares.clear();
 				posSquares.add(i);
 			}
 		}
-		// System.out.println("So choosing squares from:");
-		for (int current : posSquares) {
-			System.out.println(current);
-		}
+
 		int nextSquare = posSquares.get(rand.nextInt(posSquares.size()));
 		return bestPointFromSquare(nextSquare);
 	}
@@ -921,26 +881,17 @@ public class FinalPlayer implements Player {
 		int uses = 0;
 		Point startCoOrd = squareMap.get(square);
 		if (!opponentGrid[startCoOrd.x][startCoOrd.y].equals(boardStates.UNUSED)) {
-			// System.out.println("Square "+square+" first");
 			uses++;
 		}
 		if (!opponentGrid[startCoOrd.x][startCoOrd.y + 1].equals(boardStates.UNUSED)) {
-			// System.out.println("Square "+square+" second");
 			uses++;
 		}
 		if (!opponentGrid[startCoOrd.x + 1][startCoOrd.y].equals(boardStates.UNUSED)) {
-			// System.out.println("Square "+square+" third");
 			uses++;
 		}
 		if (!opponentGrid[startCoOrd.x + 1][startCoOrd.y + 1].equals(boardStates.UNUSED)) {
-			// System.out.println("Square "+square+" fourth");
 			uses++;
 		}
-		// System.out.println("Square use "+square+" uses: "+uses);
-		// System.out.println(opponentGrid[startCoOrd.x][startCoOrd.y]);
-		// System.out.println(opponentGrid[startCoOrd.x+1][startCoOrd.y]);
-		// System.out.println(opponentGrid[startCoOrd.x][startCoOrd.y+1]);
-		// System.out.println(opponentGrid[startCoOrd.x+1][startCoOrd.y+1]);
 		return uses;
 	}
 
