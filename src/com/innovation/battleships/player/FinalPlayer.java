@@ -420,7 +420,8 @@ public class FinalPlayer implements Player {
 			specialPositioning = PositioningType.TOGETHER;
 			break;
 		}
-		specialPositioning = PositioningType.TOGETHER;
+		
+		
 		int relativePosition=0;
 		if (specialPositioning==PositioningType.MIDDLE || specialPositioning==PositioningType.TOGETHER){
 			relativePosition = rand.nextInt(2);
@@ -436,7 +437,7 @@ public class FinalPlayer implements Player {
 				s.place(new Point(2-relativePosition, 10), orientations[1]);
 				break;
 			case TOGETHER:
-				s.place(new Point(2+relativePosition, 9), orientations[1]);
+				s.place(new Point(2+relativePosition, 9+relativePosition), orientations[1]);
 				break;
 			default:
 				break;
@@ -451,7 +452,7 @@ public class FinalPlayer implements Player {
 				s.place(new Point(7-relativePosition, 10), orientations[1]);
 				break;
 			case TOGETHER:
-				s.place(new Point(5+relativePosition, 9), orientations[1]);
+				s.place(new Point(5+relativePosition, 9+relativePosition), orientations[1]);
 				break;
 			default:
 				break;
@@ -466,7 +467,7 @@ public class FinalPlayer implements Player {
 				s.place(new Point(2-relativePosition, 4), orientations[1]);
 				break;
 			case TOGETHER:
-				s.place(new Point(1+relativePosition, 5), orientations[1]);
+				s.place(new Point(1+relativePosition, 5+relativePosition), orientations[1]);
 				break;
 			default:
 				break;
@@ -481,7 +482,7 @@ public class FinalPlayer implements Player {
 				s.place(new Point(4-relativePosition, 7), orientations[0]);// maybe 4/5 for y
 				break;
 			case TOGETHER:
-				s.place(new Point(3+relativePosition, 7), orientations[0]);// maybe 4/5 for y
+				s.place(new Point(3+relativePosition, 7+relativePosition), orientations[0]);// maybe 4/5 for y
 				break;
 			default:
 				break;
@@ -496,7 +497,7 @@ public class FinalPlayer implements Player {
 				s.place(new Point(4-relativePosition, 6), orientations[0]);// maybe 4 for y
 				break;
 			case TOGETHER:
-				s.place(new Point(3+relativePosition, 6), orientations[0]);// maybe 4 for y
+				s.place(new Point(3+relativePosition, 6+relativePosition), orientations[0]);// maybe 4 for y
 				break;
 			default:
 				break;
@@ -520,7 +521,7 @@ public class FinalPlayer implements Player {
 		// System.out.println("Default Positioining Average sunk time:" +
 		// defaultPositioningAverageSunkTime);
 		// System.out.println("Middle Positioining Average sunk time:" +
-		// middlePositioningAverageSunkTime);
+		// middlePositioningAverageSunkTime);\
 		// System.out.println("Corner Positioining Average sunk time:" +
 		// cornerPositioningAverageSunkTime);
 		// System.out.println("Together Positioining Average sunk time:" +
